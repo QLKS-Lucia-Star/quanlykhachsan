@@ -3,335 +3,342 @@ package gui;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.util.List;
+
+import dao.PhongDAO;
+import dao.DichVuDAO;
+import dao.DatPhongDAO;
+import model.entities.Phong;
+import model.entities.DichVu;
 
 public class ThemDichVuPanel extends JPanel {
+    // Palette màu Luxury
+    private final Color COLOR_PRIMARY = new Color(92, 50, 44);     // Nâu đậm
+    private final Color COLOR_ACCENT = new Color(205, 175, 125);   // Vàng đồng
+    private final Color COLOR_BG = new Color(248, 245, 240);       // Kem nhạt
+    private final Color COLOR_CARD = Color.WHITE;
+
+    private PhongDAO phongDAO = new PhongDAO();
+    private DichVuDAO dichVuDAO = new DichVuDAO();
+    private DatPhongDAO datPhongDAO = new DatPhongDAO();
+
+    private String selectedMaPhong = ""; 
+    private String currentCategory = "Minibar";
+    private Map<DichVu, Integer> cart = new LinkedHashMap<>(); 
+    
+    private JPanel roomContainer, serviceContainer, billContainer;
+    private JLabel lblTotalBill, lblRoomTitle;
 
     public ThemDichVuPanel() {
         setLayout(new BorderLayout());
-        setBackground(new Color(245,239,230));
+        setBackground(COLOR_BG);
 
-        add(createHeader(), BorderLayout.NORTH);
-        add(createMain(), BorderLayout.CENTER);
-    }
-
-    // ================= HEADER =================
-    private JPanel createHeader(){
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(new EmptyBorder(20,30,10,20));
-        panel.setBackground(new Color(245,239,230));
-
+        // Header
+        JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 40, 15));
+        header.setOpaque(false);
         JLabel title = new JLabel("Thêm dịch vụ vào phòng");
-        title.setFont(new Font("Serif", Font.BOLD, 28));
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        title.setFont(new Font("Serif", Font.BOLD, 26));
+        title.setForeground(COLOR_PRIMARY);
+        header.add(title);
+        add(header, BorderLayout.NORTH);
 
-        JLabel sub = new JLabel("Chọn phòng và thêm dịch vụ vào hóa đơn");
-        sub.setForeground(new Color(150,120,90));
-        sub.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        panel.add(title);
-        panel.add(sub);
-
-        return panel;
-    }
-
-    // ================= MAIN =================
-    private JPanel createMain(){
-
-        JPanel main = new JPanel(new GridBagLayout());
-        main.setBorder(new EmptyBorder(15,15,15,15));
-        main.setBackground(new Color(245,239,230));
+        // Body
+        JPanel body = new JPanel(new GridBagLayout());
+        body.setOpaque(false);
+        body.setBorder(new EmptyBorder(0, 30, 20, 30));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0,0,0,0);
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH; 
+        gbc.weighty = 1.0;
 
-        // ===== LEFT =====
-        gbc.gridx = 0;
-        gbc.weightx = 0.8;
-        main.add(createLeft(), gbc);
+        // Left Panel (65%)
+        gbc.gridx = 0; gbc.weightx = 0.65;
+        body.add(createLeftPanel(), gbc);
 
-        // ===== RIGHT =====
-        gbc.gridx = 1;
-        gbc.weightx = 0.4;
-        main.add(createRight(), gbc);
+        // Right Panel (35%)
+        gbc.gridx = 1; gbc.weightx = 0.35;
+        gbc.insets = new Insets(0, 25, 0, 0);
+        body.add(createRightPanel(), gbc);
 
-        return main;
+        add(body, BorderLayout.CENTER);
+
+        refreshRooms();
+        refreshServices("Minibar");
     }
 
-    // ================= LEFT =================
-    private JPanel createLeft(){
+    private JPanel createLeftPanel() {
+        JPanel p = new JPanel(new BorderLayout(0, 15));
+        p.setOpaque(false);
 
-        JPanel left = new JPanel();
-        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
-        left.setBackground(new Color(245,239,230));
+        // Khu vực chọn phòng - Khống chế chiều cao
+        JPanel roomBox = new JPanel(new BorderLayout());
+        roomBox.setBackground(COLOR_CARD);
+        roomBox.setBorder(new CompoundBorder(new LineBorder(new Color(230,230,230)), new EmptyBorder(10,15,10,15)));
+        roomBox.setPreferredSize(new Dimension(0, 135)); 
 
-        left.add(createRoomSelect());
-        left.add(Box.createVerticalStrut(10));
-        left.add(createTabs());
-        left.add(createServiceList());
+        JLabel lbl = new JLabel("Chọn phòng đang sử dụng");
+        lbl.setFont(new Font("SansSerif", Font.BOLD, 14));
+        lbl.setBorder(new EmptyBorder(0,0,5,0));
+        roomBox.add(lbl, BorderLayout.NORTH);
 
-        return left;
+        roomContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 5));
+        roomContainer.setOpaque(false);
+        
+        JScrollPane roomScroll = new JScrollPane(roomContainer);
+        roomScroll.setBorder(null);
+        roomScroll.setOpaque(false);
+        roomScroll.getViewport().setOpaque(false);
+        roomBox.add(roomScroll, BorderLayout.CENTER);
+
+        // Khu vực dịch vụ
+        JPanel serviceBox = new JPanel(new BorderLayout());
+        serviceBox.setOpaque(false);
+
+        JPanel tabs = new JPanel(new GridLayout(1, 4, 8, 0));
+        tabs.setOpaque(false);
+        tabs.setPreferredSize(new Dimension(0, 40));
+        String[] cats = {"Minibar", "Giặt ủi", "Spa", "Ăn tối"};
+        for (String c : cats) tabs.add(createTabButton(c));
+
+        serviceContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        serviceContainer.setBackground(COLOR_BG);
+        
+        JScrollPane serviceScroll = new JScrollPane(serviceContainer);
+        serviceScroll.setBorder(new EmptyBorder(10,0,0,0));
+        serviceScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        serviceBox.add(tabs, BorderLayout.NORTH);
+        serviceBox.add(serviceScroll, BorderLayout.CENTER);
+
+        p.add(roomBox, BorderLayout.NORTH);
+        p.add(serviceBox, BorderLayout.CENTER);
+        return p;
     }
 
-    // ================= ROOM SELECT =================
-    private JPanel createRoomSelect(){
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(new CompoundBorder(
-                new LineBorder(new Color(220,210,200)),
-                new EmptyBorder(15,15,15,15)
-        ));
-        panel.setBackground(Color.WHITE);
-
-        JLabel title = new JLabel("Chọn phòng");
-        title.setFont(new Font("Serif", Font.BOLD, 18));
-
-        panel.add(title, BorderLayout.NORTH);
-
-        JPanel rooms = new JPanel(new FlowLayout(FlowLayout.LEFT,15,10));
-        rooms.setOpaque(false);
-
-        rooms.add(roomCard("101","Single","An", true));
-        rooms.add(roomCard("201","Double","Tuấn", false));
-        rooms.add(roomCard("203","Deluxe","Nam", false));
-        rooms.add(roomCard("302","Deluxe","Minh", false));
-        rooms.add(roomCard("401","Suite","Long", false));
-
-        panel.add(rooms, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private JPanel roomCard(String room, String type, String name, boolean active){
-
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setPreferredSize(new Dimension(100,80));
-        card.setBorder(new LineBorder(active ? new Color(92,50,44) : new Color(200,200,200),2));
-        card.setBackground(new Color(250,250,250));
-
-        JLabel r = new JLabel(room);
-        r.setFont(new Font("Serif", Font.BOLD, 16));
-        r.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel t = new JLabel(type);
-        t.setFont(new Font("Serif", Font.PLAIN, 12));
-        t.setForeground(Color.GRAY);
-        t.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel n = new JLabel(name);
-        n.setFont(new Font("Serif", Font.PLAIN, 12));
-        n.setForeground(new Color(150,80,50));
-        n.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        card.add(Box.createVerticalGlue());
-        card.add(r);
-        card.add(t);
-        card.add(n);
-        card.add(Box.createVerticalGlue());
-
-        return card;
-    }
-
-    // ================= TABS =================
-    private JPanel createTabs(){
-
-        JPanel tabs = new JPanel(new GridLayout(1,4));
-        tabs.setBorder(new LineBorder(new Color(200,200,200)));
-
-        tabs.add(tab("Minibar", true));
-        tabs.add(tab("Laundry", false));
-        tabs.add(tab("Spa", false));
-        tabs.add(tab("Room Dining", false));
-
-        return tabs;
-    }
-
-    private JPanel tab(String name, boolean active){
-
-        JPanel t = new JPanel();
-        t.setBackground(active ? new Color(92,50,44) : Color.WHITE);
+    private JPanel createTabButton(String name) {
+        boolean isSelected = currentCategory.equals(name);
+        JPanel btn = new JPanel(new GridBagLayout());
+        btn.setBackground(isSelected ? COLOR_PRIMARY : COLOR_CARD);
+        btn.setBorder(new LineBorder(new Color(220,220,220)));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         JLabel lbl = new JLabel(name);
-        lbl.setForeground(active ? new Color(230,200,150) : new Color(120,90,60));
-        lbl.setFont(new Font("Serif", Font.BOLD, 14));
+        lbl.setForeground(isSelected ? Color.WHITE : Color.GRAY);
+        lbl.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btn.add(lbl);
 
-        t.add(lbl);
-        return t;
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                currentCategory = name;
+                refreshServices(name);
+                Container parent = btn.getParent();
+                parent.removeAll();
+                for (String c : new String[]{"Minibar", "Giặt ủi", "Spa", "Ăn tối"}) 
+                    parent.add(createTabButton(c));
+                parent.revalidate(); parent.repaint();
+            }
+        });
+        return btn;
     }
 
-    // ================= SERVICE LIST =================
-    private JPanel createServiceList(){
+    private JPanel createRightPanel() {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(COLOR_CARD);
+        p.setBorder(new CompoundBorder(new LineBorder(new Color(220,210,200)), new EmptyBorder(20,20,20,20)));
 
-        JPanel panel = new JPanel(new GridLayout(2,2,15,15));
-        panel.setBorder(new EmptyBorder(15,0,0,0));
-        panel.setBackground(new Color(245,239,230));
+        lblRoomTitle = new JLabel("Hóa đơn: ---");
+        lblRoomTitle.setFont(new Font("Serif", Font.BOLD, 20));
+        lblRoomTitle.setBorder(new EmptyBorder(0,0,10,0));
 
-        panel.add(serviceCard("Local Beer (330ml)", "55.000 đ", true));
-        panel.add(serviceCard("Imported Beer (330ml)", "95.000 đ", false));
-        panel.add(serviceCard("Soft Drink (330ml)", "25.000 đ", false));
-        panel.add(serviceCard("Wine (750ml)", "250.000 đ", false));
+        billContainer = new JPanel();
+        billContainer.setLayout(new BoxLayout(billContainer, BoxLayout.Y_AXIS));
+        billContainer.setBackground(COLOR_CARD);
 
-        return panel;
+        JScrollPane scroll = new JScrollPane(billContainer);
+        scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(235,235,235)));
+
+        JPanel footer = new JPanel(new BorderLayout(0, 10));
+        footer.setOpaque(false);
+        footer.setBorder(new EmptyBorder(15,0,0,0));
+
+        lblTotalBill = new JLabel("Tổng: 0 đ");
+        lblTotalBill.setFont(new Font("SansSerif", Font.BOLD, 18));
+        lblTotalBill.setForeground(COLOR_PRIMARY);
+
+        JButton btnSave = new JButton("XÁC NHẬN THÊM");
+        btnSave.setBackground(COLOR_PRIMARY);
+        btnSave.setForeground(Color.WHITE);
+        btnSave.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btnSave.setPreferredSize(new Dimension(0, 45));
+        btnSave.setFocusPainted(false);
+        btnSave.addActionListener(e -> handleConfirmSave());
+
+        footer.add(lblTotalBill, BorderLayout.NORTH);
+        footer.add(btnSave, BorderLayout.SOUTH);
+
+        p.add(lblRoomTitle, BorderLayout.NORTH);
+        p.add(scroll, BorderLayout.CENTER);
+        p.add(footer, BorderLayout.SOUTH);
+        return p;
     }
 
-    private JPanel serviceCard(String name, String price, boolean hasQty){
-
+    private JPanel createServiceCard(DichVu dv) {
         JPanel card = new JPanel(new BorderLayout());
-        card.setBorder(new LineBorder(new Color(220,210,200)));
-        card.setBackground(Color.WHITE);
-        card.setPreferredSize(new Dimension(200,100));
+        card.setPreferredSize(new Dimension(200, 70));
+        card.setBackground(COLOR_CARD);
+        card.setBorder(new LineBorder(new Color(230, 230, 230)));
 
-        JPanel info = new JPanel();
-        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
-        info.setBorder(new EmptyBorder(10,10,10,10));
+        JPanel info = new JPanel(new GridLayout(2, 1));
         info.setOpaque(false);
+        info.setBorder(new EmptyBorder(10, 12, 10, 5));
+        
+        JLabel name = new JLabel("<html><body style='width: 80px'><b>" + dv.getTenDichVu() + "</b></body></html>");
+        name.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        
+        JLabel price = new JLabel(String.format("%,.0f đ", dv.getGiaDichVu()));
+        price.setForeground(new Color(160, 100, 60));
+        price.setFont(new Font("SansSerif", Font.BOLD, 12));
 
-        JLabel n = new JLabel(name);
-        n.setFont(new Font("Serif", Font.BOLD, 14));
+        info.add(name); info.add(price);
 
-        JLabel p = new JLabel(price);
-        p.setForeground(new Color(150,80,50));
+        JButton btnAdd = new JButton("+");
+        btnAdd.setPreferredSize(new Dimension(45, 0));
+        btnAdd.setBackground(COLOR_ACCENT);
+        btnAdd.setForeground(Color.WHITE);
+        btnAdd.setFont(new Font("SansSerif", Font.BOLD, 18));
+        btnAdd.setBorder(null);
+        btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        info.add(n);
-        info.add(p);
+        btnAdd.addActionListener(e -> {
+            cart.put(dv, cart.getOrDefault(dv, 0) + 1);
+            updateBillUI();
+        });
 
         card.add(info, BorderLayout.CENTER);
-
-        if(hasQty){
-            JPanel qty = new JPanel();
-            qty.add(new JButton("-"));
-            qty.add(new JLabel("1"));
-            qty.add(new JButton("+"));
-            card.add(qty, BorderLayout.EAST);
-        }else{
-            JButton add = new JButton("+ Thêm");
-            add.setBackground(new Color(190,155,90));
-            card.add(add, BorderLayout.EAST);
-        }
-
+        card.add(btnAdd, BorderLayout.EAST);
         return card;
     }
 
-    // ================= RIGHT (BILL) =================
-    private JPanel createRight(){
+    private JPanel createRoomCard(Phong p) {
+        boolean isSelected = selectedMaPhong.equals(p.getMaPhong());
+        JPanel card = new JPanel(new GridLayout(2, 1));
+        card.setPreferredSize(new Dimension(85, 65)); // Kích thước gọn
+        card.setBackground(isSelected ? new Color(250, 240, 230) : COLOR_CARD);
+        card.setBorder(new LineBorder(isSelected ? COLOR_PRIMARY : new Color(230, 230, 230), isSelected ? 2 : 1));
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-        wrapper.setBackground(new Color(245,239,230));
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setPreferredSize(new Dimension(400, 320));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new CompoundBorder(
-                new LineBorder(new Color(220,210,200)),
-                new EmptyBorder(20,20,20,20)
-        ));
-
-        // ===== TITLE =====
-        JLabel title = new JLabel("Bill for Room 101");
-        title.setFont(new Font("Serif", Font.BOLD, 18));
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        panel.add(title);
-        panel.add(Box.createVerticalStrut(15));
-
-        // ===== ITEM =====
-        JPanel item = new JPanel(new BorderLayout());
-        item.setOpaque(false);
-        item.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel name = new JLabel("Local Beer (330ml)");
-        name.setFont(new Font("Serif", Font.BOLD, 14));
-
-        JLabel price = new JLabel("55.000 đ");
-        price.setFont(new Font("Serif", Font.BOLD, 14));
-
-        item.add(name, BorderLayout.WEST);
-        item.add(price, BorderLayout.EAST);
-
-        panel.add(item);
-
-        // ===== SUB TEXT =====
-        JLabel sub = new JLabel("55.000 đ × 1");
-        sub.setForeground(new Color(150,120,90));
-        sub.setFont(new Font("Serif", Font.PLAIN, 12));
-        sub.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        panel.add(sub);
-        panel.add(Box.createVerticalStrut(10));
-
-        // ===== LINE =====
-        JSeparator line1 = new JSeparator();
-        line1.setForeground(new Color(200,200,200));
-        line1.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        panel.add(line1);
-        panel.add(Box.createVerticalStrut(10));
-
-        // ===== LINE ĐẬM =====
-        JSeparator line2 = new JSeparator();
-        line2.setForeground(new Color(92,50,44));
-        line2.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        panel.add(line2);
-        panel.add(Box.createVerticalStrut(15));
-
-        // ===== TOTAL =====
-        JPanel total = new JPanel(new BorderLayout());
-        total.setOpaque(false);
-        total.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel totalText = new JLabel("Total");
-        totalText.setFont(new Font("Serif", Font.BOLD, 16));
-
-        JLabel totalPrice = new JLabel("55.000 đ");
-        totalPrice.setFont(new Font("Serif", Font.BOLD, 16));
-
-        total.add(totalText, BorderLayout.WEST);
-        total.add(totalPrice, BorderLayout.EAST);
-
-        panel.add(total);
-        panel.add(Box.createVerticalStrut(20));
-
-        // ===== BUTTON ADD =====
-        JButton add = new JButton("Thêm Vào Hóa Đơn");
-        add.setBackground(new Color(92,50,44));
-        add.setForeground(Color.WHITE);
-        add.setFocusPainted(false);
-        add.setBorder(new EmptyBorder(12,0,12,0));
-        add.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
-        add.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        // ===== BUTTON CLEAR =====
-        JButton clear = new JButton("Làm Mới");
-        clear.setForeground(new Color(150,50,50));
-        clear.setBackground(new Color(245, 245, 245));
-        clear.setBorder(new LineBorder(new Color(224, 224, 224), 2));
-        clear.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
-        clear.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel id = new JLabel(p.getMaPhong(), SwingConstants.CENTER);
+        id.setFont(new Font("SansSerif", Font.BOLD, 15));
         
-        Dimension btnSize = new Dimension(Integer.MAX_VALUE, 45);
+        String guest = datPhongDAO.getTenKhachHienTai(p.getMaPhong());
+        JLabel name = new JLabel(guest != null ? guest : "...", SwingConstants.CENTER);
+        name.setFont(new Font("SansSerif", Font.PLAIN, 10));
+        name.setForeground(new Color(150, 100, 80));
 
-	
-	    add.setMaximumSize(btnSize);
-	    add.setPreferredSize(new Dimension(300,45));
-	    add.setBorder(new EmptyBorder(12,0,12,0));
-	
-	    // CLEAR
-	    clear.setMaximumSize(btnSize);
-	    clear.setPreferredSize(new Dimension(300,45));
-	    clear.setBorder(new EmptyBorder(12,0,12,0));   
+        card.add(id); card.add(name);
 
-        panel.add(add);
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(clear);
-
-        wrapper.add(panel);
-
-        return wrapper;
+        card.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                selectedMaPhong = p.getMaPhong();
+                lblRoomTitle.setText("Hóa đơn: P." + selectedMaPhong);
+                refreshRooms();
+            }
+        });
+        return card;
     }
+
+    private void updateBillUI() {
+        billContainer.removeAll();
+        double total = 0;
+        for (Map.Entry<DichVu, Integer> entry : cart.entrySet()) {
+            DichVu dv = entry.getKey();
+            int qty = entry.getValue();
+            double sub = dv.getGiaDichVu() * qty;
+            total += sub;
+
+            JPanel item = new JPanel(new BorderLayout());
+            item.setOpaque(false);
+            item.setMaximumSize(new Dimension(1000, 40));
+            item.setBorder(new EmptyBorder(8, 5, 8, 5));
+
+            JLabel left = new JLabel(qty + " x " + dv.getTenDichVu());
+            JLabel right = new JLabel(String.format("%,.0f đ", sub));
+            
+            item.add(left, BorderLayout.WEST);
+            item.add(right, BorderLayout.EAST);
+            billContainer.add(item);
+        }
+        lblTotalBill.setText(String.format("Tổng cộng: %,.0f đ", total));
+        billContainer.revalidate(); billContainer.repaint();
+    }
+
+    private void refreshRooms() {
+        roomContainer.removeAll();
+        for (Phong p : phongDAO.getAll()) {
+            if ("COKHACH".equals(p.getTrangThai())) roomContainer.add(createRoomCard(p));
+        }
+        roomContainer.revalidate(); roomContainer.repaint();
+    }
+
+    private void refreshServices(String cat) {
+        serviceContainer.removeAll();
+        Map<String, String> map = new HashMap<>();
+        map.put("Minibar", "NUOCUONG"); map.put("Laundry", "MAYGIAT");
+        map.put("Spa", "SPA"); map.put("Room Dining", "THUCAN");
+
+        List<DichVu> list = dichVuDAO.getByType(map.getOrDefault(cat, cat));
+        for (DichVu dv : list) serviceContainer.add(createServiceCard(dv));
+        
+        serviceContainer.revalidate(); serviceContainer.repaint();
+    }
+
+    private void handleConfirmSave() {
+        if (selectedMaPhong.isEmpty()) { 
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn phòng!"); return; 
+        }
+        if (cart.isEmpty()) { 
+            JOptionPane.showMessageDialog(this, "Chưa chọn dịch vụ!"); return; 
+        }
+        
+        int confirm = JOptionPane.showConfirmDialog(this, "Xác nhận thêm dịch vụ vào phòng " + selectedMaPhong + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (datPhongDAO.saveServiceOrder(selectedMaPhong, cart)) {
+                JOptionPane.showMessageDialog(this, "Thành công!");
+                cart.clear(); updateBillUI();
+            }
+        }
+    }
+
+//    public static void main(String[] args) {
+//        // Thiết lập Look and Feel của hệ thống để giao diện mượt hơn
+//        try {
+//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        // Chạy giao diện trên Event Dispatch Thread
+//        SwingUtilities.invokeLater(() -> {
+//            JFrame frame = new JFrame("Hệ thống Quản lý Khách sạn - Test Dịch Vụ");
+//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//            
+//            // Thiết lập kích thước cửa sổ (thường là full màn hình hoặc 1280x800)
+//            frame.setSize(1200, 800);
+//            frame.setMinimumSize(new Dimension(1000, 700));
+//            
+//            // Khởi tạo Panel của bạn
+//            ThemDichVuPanel servicePanel = new ThemDichVuPanel();
+//            
+//            // Thêm vào Frame
+//            frame.add(servicePanel);
+//            
+//            // Căn giữa màn hình
+//            frame.setLocationRelativeTo(null);
+//            
+//            // Hiển thị
+//            frame.setVisible(true);
+//        });
+//    }
 }

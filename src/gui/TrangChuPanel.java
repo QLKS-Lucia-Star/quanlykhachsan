@@ -127,9 +127,9 @@ public class TrangChuPanel extends JPanel {
     private JPanel roomCard(String name, String type, String status, double price) {
         Color colorTop, colorBottom;
         switch (status) {
-            case "CONTRONG": colorTop = new Color(85, 170, 110); colorBottom = new Color(60, 130, 90); break;
-            case "BAN": colorTop = new Color(200, 80, 80); colorBottom = new Color(165, 55, 55); break;
-            case "DACOKHACH": colorTop = new Color(220, 180, 100); colorBottom = new Color(190, 155, 90); break;
+            case "Trống": colorTop = new Color(85, 170, 110); colorBottom = new Color(60, 130, 90); break;
+            case "Bẩn": colorTop = new Color(200, 80, 80); colorBottom = new Color(165, 55, 55); break;
+            case "Đang ở": colorTop = new Color(220, 180, 100); colorBottom = new Color(190, 155, 90); break;
             default: colorTop = new Color(160, 160, 160); colorBottom = new Color(120, 120, 120); break;
         }
 
@@ -145,6 +145,25 @@ public class TrangChuPanel extends JPanel {
                 g2.dispose();
             }
         };
+        
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) { // Nhấp đúp chuột
+                    JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(TrangChuPanel.this);
+                    String tang = "Tầng " + name.substring(1, 2); 
+                   
+                    ChiTietPhongFrame dialog = new ChiTietPhongFrame(parentFrame,name, type, tang, status);
+                    dialog.setVisible(true);
+                }
+            }
+
+            // Hiệu ứng đổi con trỏ chuột khi rê vào để người dùng biết có thể nhấn
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+        });
 
         card.setPreferredSize(new Dimension(160, 100));
         card.setLayout(new GridLayout(4, 1));

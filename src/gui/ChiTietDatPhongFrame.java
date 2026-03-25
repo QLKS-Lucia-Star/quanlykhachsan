@@ -6,6 +6,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 
 public class ChiTietDatPhongFrame extends JFrame {
@@ -21,6 +23,9 @@ public class ChiTietDatPhongFrame extends JFrame {
     private String nameCustomer, phone, id, roomType, checkInDate, checkOutDate;
     private int customerNumber;
     private double deposit, amount;
+	private JButton btnCheckIn;
+	private JButton btnBookingNew;
+	private JButton btnClose;
 
     public ChiTietDatPhongFrame(String nameCustomer, String phone, String id, String roomType, String checkInDate,
                                 String checkOutDate, int customerNumber, double deposit, double amount) {
@@ -96,9 +101,17 @@ public class ChiTietDatPhongFrame extends JFrame {
         buttonPanel.setBackground(CARD_COLOR);
         buttonPanel.setMaximumSize(new Dimension(350, 150));
 
-        buttonPanel.add(createStyledButton("NHẬN PHÒNG NGAY", BUTTON_DARK, Color.WHITE));
-        buttonPanel.add(createStyledButton("TẠO ĐẶT PHÒNG MỚI", ACCENT_GOLD, Color.WHITE));
-        buttonPanel.add(createStyledButton("ĐÓNG", Color.WHITE, TEXT_DARK));
+        buttonPanel.add(btnCheckIn=createStyledButton("NHẬN PHÒNG NGAY", BUTTON_DARK, Color.WHITE));
+        buttonPanel.add(btnClose = createStyledButton("ĐÓNG", Color.WHITE, TEXT_DARK));
+        
+        btnCheckIn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new CheckInPanel().setVisible(true);	
+			}
+		});
+        
+        btnClose.addActionListener(e->dispose());
 
 
         card.add(titleLabel);

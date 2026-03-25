@@ -1,5 +1,5 @@
 ﻿
---USE master
+
 --DROP DATABASE QuanLyDatPhong;
 -- Kiểm tra và tạo Database
 IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'QuanLyDatPhong')
@@ -75,8 +75,11 @@ CREATE TABLE DichVu (
 -- Bảng Phòng
 CREATE TABLE Phong (
     maPhong VARCHAR(20) PRIMARY KEY,
+    tenPhong NVARCHAR(50),
     tenLoaiPhong VARCHAR(50),
     tinhTrang NVARCHAR(20) CHECK (tinhTrang IN (N'BAN', N'CONTRONG', N'DANGSUDUNG')),
+    soPhong INT,
+	soTang INT,
     CONSTRAINT FK_Phong_LoaiPhong FOREIGN KEY (tenLoaiPhong) REFERENCES LoaiPhong_ThongTin(tenLoaiPhong)
 );
 
@@ -129,21 +132,21 @@ CREATE TABLE BangGiaDichVu_ChiTiet (
 -- Bảng Hóa Đơn
 CREATE TABLE HoaDon (
     maHoaDon VARCHAR(20) PRIMARY KEY,
-	maDatPhong VARCHAR(20),
     ngayTaoHoaDon DATETIME DEFAULT GETDATE(),
     maNhanVien VARCHAR(8),
-    CONSTRAINT FK_HoaDon_NhanVien FOREIGN KEY (maNhanVien) REFERENCES NhanVien(maNhanVien),
-	CONSTRAINT FK_CTHD_DatPhong FOREIGN KEY (maDatPhong) REFERENCES DatPhong(maDatPhong)
+    CONSTRAINT FK_HoaDon_NhanVien FOREIGN KEY (maNhanVien) REFERENCES NhanVien(maNhanVien)
 );
 
 -- Bảng Chi Tiết Hóa Đơn
 CREATE TABLE ChiTietHoaDon (
     maHoaDon VARCHAR(20),
+    maDatPhong VARCHAR(20),
     soGioO DECIMAL(5,2),
     soNgayO DECIMAL(5,2),
     tongTienThanhToan DECIMAL(18,2),
-    PRIMARY KEY (maHoaDon),
-    CONSTRAINT FK_CTHD_HoaDon FOREIGN KEY (maHoaDon) REFERENCES HoaDon(maHoaDon)
+    PRIMARY KEY (maHoaDon, maDatPhong),
+    CONSTRAINT FK_CTHD_HoaDon FOREIGN KEY (maHoaDon) REFERENCES HoaDon(maHoaDon),
+    CONSTRAINT FK_CTHD_DatPhong FOREIGN KEY (maDatPhong) REFERENCES DatPhong(maDatPhong)
 );
 
 -- Bảng Dịch Vụ Đã Sử Dụng
@@ -157,5 +160,5 @@ CREATE TABLE DichVuDaSuDung (
     CONSTRAINT FK_DVSD_DichVu FOREIGN KEY (maDichVu) REFERENCES DichVu(maDichVu),
     CONSTRAINT FK_DVSD_DatPhong FOREIGN KEY (maDatPhong) REFERENCES DatPhong(maDatPhong)
 );
-Alter Table Phong add soTang INT
+
 GO

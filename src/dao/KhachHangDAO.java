@@ -24,7 +24,7 @@ public class KhachHangDAO {
 				KhachHang kh = new KhachHang(
 						rs.getString("maKhachHang"), 
 						rs.getString("hoTen"), 
-						rs.getString("CCCD"), 
+						rs.getString("soCanCuocCongDan"), 
 						rs.getString("soDienThoai"));
 				
 				dsKhachHang.add(kh);
@@ -57,7 +57,7 @@ public class KhachHangDAO {
 		int n=0;
 		try {
 			Connection con = ConnectDatabase.getInstance().getConnection();
-			PreparedStatement pstmt = con.prepareStatement("UPDATE KhachHang SET(?,?,?) WHERE maKhachHang=?");
+			PreparedStatement pstmt = con.prepareStatement("UPDATE KhachHang SET hoTen=?, soDienThoai=?, soCanCuocCOngDan=? WHERE maKhachHang=?");
 			
 			pstmt.setString(1, kh.getHoTen());
 			pstmt.setString(2, kh.getCCCD());
@@ -73,38 +73,32 @@ public class KhachHangDAO {
 		
 	}
 	
-	public boolean  delete(String maKhachHang) {
-		int n=0;
-		try {
-			Connection con = ConnectDatabase.getInstance().getConnection();
-			PreparedStatement pstmt = con.prepareStatement("DELETE FROM KhachHang WHERE maKhachHang=?");
-			
-			pstmt.setString(1, maKhachHang);
-			
-			n =pstmt.executeUpdate();
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return n>0;
-	}
-	public KhachHang findKhachHangByID(String ma) {
-		KhachHang kh = null;
-		try {
-			Connection con = ConnectDatabase.getInstance().getConnection();
-			PreparedStatement pstmt = con.prepareStatement("SELECT * FROM KhachHang WHERE maKhachHang=?");
-			pstmt.setString(1, ma);
-			ResultSet rs = pstmt.executeQuery();
-			if(rs.next()) {
-				kh = new KhachHang(rs.getString("maKhachHang"), 
-						rs.getString("hoTen"), rs.getString("CCCD"), rs.getString("soDienThoai"));
-			}
-		
-		}catch (Exception e) {
-			// TODO: handle exception
-			e.printStackTrace();
-		}
-		return kh;
+	public KhachHang findKhachHangByID(String keyWord) {
+	    KhachHang kh = null;
+
+	    try {
+	        Connection con = ConnectDatabase.getInstance().getConnection();
+
+	        String sql = "SELECT * FROM KhachHang WHERE maKhachHang LIKE ?";
+	        PreparedStatement pstmt = con.prepareStatement(sql);
+
+	        pstmt.setString(1, "%" + keyWord + "%");
+
+	        ResultSet rs = pstmt.executeQuery();
+
+	        if (rs.next()) {
+	            kh = new KhachHang(
+	                    rs.getString("maKhachHang"),
+	                    rs.getString("hoTen"),
+	                    rs.getString("soCanCuocCongDan"),
+	                    rs.getString("soDienThoai")
+	            );
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return kh;
 	}
 }

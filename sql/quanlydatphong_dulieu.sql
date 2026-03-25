@@ -38,35 +38,35 @@ INSERT INTO DichVu (maDichVu, tenDichVu, giaDichVu, loaiDichVu, mieuTa) VALUES
 ('DV03', N'Giặt ủi', 100000, N'MAYGIAT', N'Gói giặt ủi');
 
 -- 6. CHÈN PHÒNG
-INSERT INTO Phong (maPhong, tenLoaiPhong, tinhTrang, soTang) VALUES 
+INSERT INTO Phong (maPhong, tenPhong, tenLoaiPhong, tinhTrang, soPhong, soTang) VALUES 
 
 -- Tầng 1
-('P101', 'SINGLE', N'CONTRONG',1),
-('P102', 'DOUBLE', N'CONTRONG',1),
-('P103', 'TWIN',   N'CONTRONG',1),
-('P104', 'TRIPLE', N'CONTRONG',1),
-('P105', 'FAMILY', N'CONTRONG',1),
+('P101', N'Phòng 101', 'SINGLE', N'CONTRONG', 101,1),
+('P102', N'Phòng 102', 'DOUBLE', N'CONTRONG', 102,1),
+('P103', N'Phòng 103', 'TWIN',   N'CONTRONG', 103,1),
+('P104', N'Phòng 104', 'TRIPLE', N'CONTRONG', 104,1),
+('P105', N'Phòng 105', 'FAMILY', N'CONTRONG', 105,1),
 
 -- Tầng 2
-('P201', 'SINGLE', N'CONTRONG',2),
-('P202', 'DOUBLE', N'CONTRONG',2),
-('P203', 'TWIN',   N'CONTRONG',2),
-('P204', 'TRIPLE', N'CONTRONG',2),
-('P205', 'FAMILY', N'CONTRONG',2),
+('P201', N'Phòng 201', 'SINGLE', N'CONTRONG', 201,2),
+('P202', N'Phòng 202', 'DOUBLE', N'CONTRONG', 202,2),
+('P203', N'Phòng 203', 'TWIN',   N'CONTRONG', 203,2),
+('P204', N'Phòng 204', 'TRIPLE', N'CONTRONG', 204,2),
+('P205', N'Phòng 205', 'FAMILY', N'CONTRONG', 205,2),
 
 -- Tầng 3
-('P301', 'SINGLE', N'CONTRONG',3),
-('P302', 'DOUBLE', N'CONTRONG',3),
-('P303', 'TWIN',   N'CONTRONG',3),
-('P304', 'TRIPLE', N'CONTRONG',3),
-('P305', 'FAMILY', N'CONTRONG',3),
+('P301', N'Phòng 301', 'SINGLE', N'CONTRONG', 301,3),
+('P302', N'Phòng 302', 'DOUBLE', N'CONTRONG', 302,3),
+('P303', N'Phòng 303', 'TWIN',   N'CONTRONG', 303,3),
+('P304', N'Phòng 304', 'TRIPLE', N'CONTRONG', 304,3),
+('P305', N'Phòng 305', 'FAMILY', N'CONTRONG', 305,3),
 
 -- Tầng 4
-('P401', 'SINGLE', N'CONTRONG',4),
-('P402', 'DOUBLE', N'CONTRONG',4),
-('P403', 'TWIN',   N'CONTRONG',4),
-('P404', 'TRIPLE', N'CONTRONG',4),
-('P405', 'FAMILY', N'CONTRONG',4);
+('P401', N'Phòng 401', 'SINGLE', N'CONTRONG', 401,4),
+('P402', N'Phòng 402', 'DOUBLE', N'CONTRONG', 402,4),
+('P403', N'Phòng 403', 'TWIN',   N'CONTRONG', 403,4),
+('P404', N'Phòng 404', 'TRIPLE', N'CONTRONG', 404,4),
+('P405', N'Phòng 405', 'FAMILY', N'CONTRONG', 405,4);
 
 -- 7. CHÈN ĐẶT PHÒNG
 INSERT INTO DatPhong (maDatPhong, ngayDatPhong, maKhachHang, ngayCheckInDuKien, ngayCheckInThucTe, ngayCheckOutDuKien, ngayCheckOutThucTe) VALUES 
@@ -85,20 +85,20 @@ INSERT INTO ChiTietDatPhong (maChiTietDatPhong, maPhong, maDatPhong) VALUES
 ('CTDP05', 'P301', 'DP05');
 
 -- 9. HÓA ĐƠN
-INSERT INTO HoaDon (maHoaDon,maDatPhong, ngayTaoHoaDon, maNhanVien) VALUES 
-('HD001','DP01', GETDATE(), '20260002'),
-('HD002','DP02', GETDATE(), '20260002'),
-('HD003','DP02', GETDATE(), '20260001'),
-('HD004','DP03', GETDATE(), '20260001'),
-('HD005','DP01', GETDATE(), '20260002');
+INSERT INTO HoaDon (maHoaDon, ngayTaoHoaDon, maNhanVien) VALUES 
+('HD001', GETDATE(), '20260002'),
+('HD002', GETDATE(), '20260002'),
+('HD003', GETDATE(), '20260001'),
+('HD004', GETDATE(), '20260001'),
+('HD005', GETDATE(), '20260002');
 
 -- 10. CHI TIẾT HÓA ĐƠN
-INSERT INTO ChiTietHoaDon (maHoaDon, soGioO, soNgayO) VALUES 
-('HD001', 0, 2),
-('HD002', 0, 2),
-('HD003', 0, 3),
-('HD004', 0, 1),
-('HD005', 0, 2);
+INSERT INTO ChiTietHoaDon (maHoaDon, maDatPhong, soGioO, soNgayO) VALUES 
+('HD001', 'DP01', 0, 2),
+('HD002', 'DP02', 0, 2),
+('HD003', 'DP03', 0, 3),
+('HD004', 'DP04', 0, 1),
+('HD005', 'DP05', 0, 2);
 
 -- 11. DỊCH VỤ ĐÃ SỬ DỤNG
 INSERT INTO DichVuDaSuDung (maDichVuSuDung, maDichVu, maDatPhong, ngaySuDung, soLuong, tongTienDichVu) VALUES 
@@ -107,3 +107,23 @@ INSERT INTO DichVuDaSuDung (maDichVuSuDung, maDichVu, maDatPhong, ngaySuDung, so
 ('DVSD03', 'DV03', 'DP02', GETDATE(), 1, 100000),
 ('DVSD04', 'DV01', 'DP03', GETDATE(), 3, 60000),
 ('DVSD05', 'DV02', 'DP04', GETDATE(), 2, 100000);
+
+
+
+-- 1. CHÈN THÔNG TIN BẢNG GIÁ DỊCH VỤ (Thông tin chung)
+-- Cột trangThai kiểu BIT nên dùng 1 (Đang áp dụng) hoặc 0 (Hết hạn)
+INSERT INTO BangGiaDichVu_ThongTin (maBangGia, tenBangGia, ngayApDung, ngayHetHieuLuc, trangThai)
+VALUES 
+('BG01', N'Bảng giá tiêu chuẩn 2026', '2026-01-01', '2026-12-31', 1),
+('BG02', N'Bảng giá khuyến mãi mùa hè', '2026-06-01', '2026-08-31', 0);
+
+-- 2. CHÈN CHI TIẾT BẢNG GIÁ DỊCH VỤ (Giá cụ thể cho từng món)
+-- Lưu ý: maDichVu phải khớp với bảng DichVu bạn đã chèn trước đó (DV01, DV02, DV03)
+INSERT INTO BangGiaDichVu_ChiTiet (maChiTietBangGia, maBangGia, maDichVu, giaDichVu, donViTinh, soLuong)
+VALUES 
+('CTBG01', 'BG01', 'DV01', 20000, N'Chai', 1),
+('CTBG02', 'BG01', 'DV02', 50000, N'Suất', 1),
+('CTBG03', 'BG01', 'DV03', 100000, N'Lần', 1),
+-- Bảng giá khuyến mãi (giảm giá nước suối)
+('CTBG04', 'BG02', 'DV01', 15000, N'Chai', 1);
+GO

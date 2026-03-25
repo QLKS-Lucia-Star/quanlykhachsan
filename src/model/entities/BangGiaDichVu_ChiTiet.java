@@ -1,0 +1,105 @@
+package model.entities;
+
+import java.util.Objects;
+
+/**
+ * Thực thể đại diện cho bảng BangGiaDichVu_ChiTiet trong cơ sở dữ liệu.
+ * Dùng để lưu trữ giá cụ thể của từng dịch vụ theo từng bảng giá.
+ */
+public class BangGiaDichVu_ChiTiet {
+    private String maChiTietBangGia; // maChiTietBangGia (Primary Key)
+    private String maBangGia;        // maBangGia (Foreign Key)
+    private String maDichVu;         // maDichVu (Foreign Key)
+    private double giaDichVu;        // giaDichVu
+    private String donViTinh;        // donViTinh
+    private int soLuong;             // soLuong
+
+    // Constructor không tham số
+    public BangGiaDichVu_ChiTiet() {
+    }
+
+    // Constructor đầy đủ tham số
+    public BangGiaDichVu_ChiTiet(String maChiTietBangGia, String maBangGia, String maDichVu, 
+                                double giaDichVu, String donViTinh, int soLuong) {
+        this.maChiTietBangGia = maChiTietBangGia;
+        this.maBangGia = maBangGia;
+        this.maDichVu = maDichVu;
+        this.giaDichVu = giaDichVu;
+        this.donViTinh = donViTinh;
+        this.soLuong = soLuong;
+    }
+
+    // Getter và Setter
+    public String getMaChiTietBangGia() {
+        return maChiTietBangGia;
+    }
+
+    public void setMaChiTietBangGia(String maChiTietBangGia) {
+        this.maChiTietBangGia = maChiTietBangGia;
+    }
+
+    public String getMaBangGia() {
+        return maBangGia;
+    }
+
+    public void setMaBangGia(String maBangGia) {
+        this.maBangGia = maBangGia;
+    }
+
+    public String getMaDichVu() {
+        return maDichVu;
+    }
+
+    public void setMaDichVu(String maDichVu) {
+        this.maDichVu = maDichVu;
+    }
+
+    public double getGiaDichVu() {
+        return giaDichVu;
+    }
+
+    public void setGiaDichVu(double giaDichVu) {
+        this.giaDichVu = giaDichVu;
+    }
+
+    public String getDonViTinh() {
+        return donViTinh;
+    }
+
+    public void setDonViTinh(String donViTinh) {
+        this.donViTinh = donViTinh;
+    }
+
+    public int getSoLuong() {
+        return soLuong;
+    }
+
+    public void setSoLuong(int soLuong) {
+        this.soLuong = soLuong;
+    }
+
+    // Phương thức hashCode và equals dựa trên maChiTietBangGia
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BangGiaDichVu_ChiTiet that = (BangGiaDichVu_ChiTiet) o;
+        return Objects.equals(maChiTietBangGia, that.maChiTietBangGia);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(maChiTietBangGia);
+    }
+
+    // Phương thức toString hỗ trợ kiểm tra dữ liệu
+    @Override
+    public String toString() {
+        return "BangGiaDichVu_ChiTiet{" +
+                "maChiTietBangGia='" + maChiTietBangGia + '\'' +
+                ", maDichVu='" + maDichVu + '\'' +
+                ", giaDichVu=" + giaDichVu +
+                ", donViTinh='" + donViTinh + '\'' +
+                '}';
+    }
+}

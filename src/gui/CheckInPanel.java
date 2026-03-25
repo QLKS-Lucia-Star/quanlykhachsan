@@ -2,9 +2,14 @@ package gui;
 
 import javax.swing.*;
 import javax.swing.border.*;
+
+import dao.DatPhongDAO;
+import model.entities.DatPhong;
+
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class CheckInPanel extends JPanel {
 
@@ -18,9 +23,28 @@ public class CheckInPanel extends JPanel {
     private JLabel lblName, lblPhone, lblID, lblRoomType, lblCheckIn, lblGuests;
 
     private JPanel selectedRoom = null;
+	private JPanel quickSearch;
+	private JTextField txtSearch;
+	private AbstractButton btnSearch;
+	private DatPhongDAO datPhongDAO = new DatPhongDAO();
+	private JPanel step3;
 
     public CheckInPanel() {
-        setLayout(new BorderLayout());
+        init();
+    }
+    public CheckInPanel(String name, String phone, String id, String type, String date, String guests) {
+    	
+    	lblName.setText(name);
+        lblPhone.setText(phone);
+        lblID.setText(id);
+        lblRoomType.setText(type);
+        lblCheckIn.setText(date);
+        lblGuests.setText(guests);
+        init();
+    }
+    
+    private void init() {
+    	setLayout(new BorderLayout());
         setBackground(pageBg);
 
         JPanel container = new JPanel();
@@ -50,25 +74,34 @@ public class CheckInPanel extends JPanel {
         JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         searchBar.setOpaque(false);
 
-        JTextField txtSearch = new JTextField();
+        txtSearch  = new JTextField();
         txtSearch.setPreferredSize(new Dimension(450, 40));
         txtSearch.setBorder(new CompoundBorder(
                 new LineBorder(borderColor, 1, true),
                 new EmptyBorder(5, 10, 5, 10)
         ));
+        
+        txtSearch.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    handleSearch();
+                }
+            }
+        });
 
-        JButton searchBtn = new JButton("Tìm Kiếm");
-        stylePrimaryButton(searchBtn);
+        btnSearch = new JButton("Tìm Kiếm");
+        btnSearch.addActionListener(e -> handleSearch());
+        stylePrimaryButton(btnSearch);
+        
 
         searchBar.add(new JLabel("Mã đặt phòng / SĐT:"));
         searchBar.add(txtSearch);
-        searchBar.add(searchBtn);
-
-        JPanel quickSearch = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        searchBar.add(btnSearch);
+ 
+        quickSearch = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         quickSearch.setOpaque(false);
-        quickSearch.add(new JLabel("Gợi ý hôm nay: "));
-        quickSearch.add(createSmallBtn("BK002 - Bích"));
-        quickSearch.add(createSmallBtn("BK005 - Lan"));
+        loadQuickSearchSuggestions();
 
         step1.add(searchBar);
         step1.add(quickSearch);
@@ -97,7 +130,8 @@ public class CheckInPanel extends JPanel {
         container.add(Box.createVerticalStrut(20));
 
         // ===== STEP 3 =====
-        JPanel step3 = createStyledPanel("3. CHỌN PHÒNG VÀ HOÀN TẤT");
+        step3 = createStyledPanel("3. PHÒNG");
+        step3.setVisible(false);
 
         JPanel roomSelection = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
         roomSelection.setOpaque(false);
@@ -116,6 +150,37 @@ public class CheckInPanel extends JPanel {
         stylePrimaryButton(btnConfirm);
         btnConfirm.setPreferredSize(new Dimension(260, 45));	
         btnCancel.setPreferredSize(btnConfirm.getPreferredSize());
+        btnConfirm.addActionListener(e -> {
+            if (lblName.getText().equals("---")) {
+                JOptionPane.showMessageDialog(this, "Vui lòng tìm kiếm đơn đặt phòng trước!");
+                return;
+            }
+            
+            if (selectedRoom == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một phòng trống từ danh sách!");
+                return;
+            }
+
+            // Lấy ID phòng từ component (Label đầu tiên trong grid của selectedRoom)
+            JLabel lblIdInCard = (JLabel) selectedRoom.getComponent(0);
+            String roomNum = lblIdInCard.getText();
+
+            int result = JOptionPane.showConfirmDialog(this, 
+                "Xác nhận nhận phòng " + roomNum + " cho khách " + lblName.getText() + "?", 
+                "Xác nhận", JOptionPane.YES_NO_OPTION);
+                
+            if (result == JOptionPane.YES_OPTION) {
+                JOptionPane.showMessageDialog(this, "Check-in thành công!");
+            }
+        });
+        
+        btnCancel.addActionListener(e -> {
+            txtSearch.setText("");
+            resetThongTin();
+            step3.setVisible(false);
+            revalidate();
+            repaint();
+        });
         
         actionPanel.add(btnConfirm);
         actionPanel.add(btnCancel);
@@ -183,22 +248,87 @@ public class CheckInPanel extends JPanel {
     }
 
     // ===== BUTTON =====
-    private void stylePrimaryButton(JButton btn) {
-        btn.setBackground(primaryColor);
-        btn.setForeground(Color.WHITE);
-        btn.setFont(new Font("SansSerif", Font.BOLD, 13));
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(new EmptyBorder(12, 22, 12, 22));
+    private void stylePrimaryButton(AbstractButton btnSearch2) {
+        btnSearch2.setBackground(primaryColor);
+        btnSearch2.setForeground(Color.WHITE);
+        btnSearch2.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btnSearch2.setFocusPainted(false);
+        btnSearch2.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnSearch2.setBorder(new EmptyBorder(12, 22, 12, 22));
 
-        btn.addMouseListener(new MouseAdapter() {
+        btnSearch2.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                btn.setBackground(primaryColor.darker());
+                btnSearch2.setBackground(primaryColor.darker());
             }
             public void mouseExited(MouseEvent e) {
-                btn.setBackground(primaryColor);
+                btnSearch2.setBackground(primaryColor);
             }
         });
+    }
+    
+    private void loadQuickSearchSuggestions() {
+        quickSearch.removeAll();
+        List<String> dsMa = datPhongDAO.getMaDatPhongCheckInHomNay();
+
+        if (dsMa.isEmpty()) {
+            JLabel lblEmpty = new JLabel("Không có đơn cần nhận hôm nay.");
+            lblEmpty.setFont(new Font("SansSerif", Font.ITALIC, 12));
+            quickSearch.add(lblEmpty);
+        } else {
+            quickSearch.add(new JLabel("Gợi ý hôm nay: "));
+            for (String ma : dsMa) {
+                JButton btn = createSmallBtn(ma);
+                btn.addActionListener(e -> {
+                    txtSearch.setText(ma);
+                    btnSearch.doClick();
+                });
+                quickSearch.add(btn);
+            }
+        }
+        quickSearch.revalidate();
+        quickSearch.repaint();
+    }
+
+    // --- Sửa lại hàm tìm kiếm ---
+    private void handleSearch() {
+        String key = txtSearch.getText().trim();
+        if(key.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập mã đặt phòng hoặc SĐT!");
+            return;
+        }
+        
+        // Reset trạng thái chọn phòng cũ mỗi khi tìm kiếm mới
+        selectedRoom = null; 
+        
+        DatPhong data = datPhongDAO.findDatPhongDetail(key);
+        if (data != null) {
+            // Hiển thị thông tin khách hàng
+            lblName.setText(data.getKhachHang().getHoTen());
+            lblPhone.setText(data.getKhachHang().getSoDienThoai());
+            lblID.setText(data.getKhachHang().getCCCD());
+            
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            lblCheckIn.setText(data.getNgayCheckInDuKien().format(dtf));
+
+            // 👉 HIỆN STEP 3 VÀ CẬP NHẬT UI
+            step3.setVisible(true);
+            step3.revalidate();
+            step3.repaint();
+            
+        } else {
+            step3.setVisible(false);
+            resetThongTin();
+            JOptionPane.showMessageDialog(this, "Không tìm thấy đơn đặt phòng!");
+        }
+    }
+
+    // Hàm phụ để dọn dẹp giao diện
+    private void resetThongTin() {
+        lblName.setText("---");
+        lblPhone.setText("---");
+        lblID.setText("---");
+        lblCheckIn.setText("---");
+        selectedRoom = null;
     }
 
     private void styleSecondaryButton(JButton btn) {

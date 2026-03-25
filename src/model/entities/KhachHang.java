@@ -10,6 +10,8 @@ public class KhachHang {
 	public KhachHang(String maKhachHang) {
 		this.maKhachHang = maKhachHang;}
 
+	public KhachHang() {
+}
 	public KhachHang(String maKhachHang, String hoTen, String cCCD, String soDienThoai) {
 		super();
 		this.maKhachHang = maKhachHang;
@@ -46,6 +48,8 @@ public class KhachHang {
 	public String getMaKhachHang() {
 		return maKhachHang;
 	}
-	
+	public void setMaKhachHang(String maKH) {
+		this.maKhachHang = maKH;
+	}
 	
 }

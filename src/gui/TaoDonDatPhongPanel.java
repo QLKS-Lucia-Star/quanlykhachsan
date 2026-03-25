@@ -13,8 +13,9 @@ import com.toedter.calendar.JTextFieldDateEditor;
 
 import dao.BangGiaPhongDAO;
 import dao.LoaiPhongDAO;
+import dao.PhongDAO;
 import model.entities.BangGiaPhong;
-
+import model.entities.Phong;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -28,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class TaoDonDatPhongPanel extends JPanel implements ActionListener, FocusListener, DocumentListener{
@@ -54,6 +56,11 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
 	private JButton btnCancel;
 	private String nameStaff;
 	private final DecimalFormat df = new DecimalFormat("#,###");
+	private JPanel roomSelection;
+	private PhongDAO phongDAO = new PhongDAO();
+	private JButton btnOpenRoomSelect;
+	private JLabel lblSumRoomSelected;
+	private String selectedRooms= "";
 	
 
     public TaoDonDatPhongPanel(String nameStaff) {
@@ -64,37 +71,40 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
     	init();  
     }
     private void init() {
-    	setLayout(new BorderLayout(25,25));
+        setLayout(new BorderLayout(25,25));
         setBackground(new Color(245,241,234));
         setBorder(new EmptyBorder(25,25,25,25));
         
-        lblSumRoomPrice = new JLabel("0");
-	    lblSumDeposit = new JLabel("0");
-	    lblSumTotal = new JLabel("0");
+        lblSumRoomPrice = new JLabel("0 VND");
+        lblSumDeposit = new JLabel("0 VND");
+        lblSumTotal = new JLabel("0 VND");
         lblSumName = new JLabel("—");
         lblSumPhone = new JLabel("—");
         lblSumRoomType = new JLabel("—");
-        lblSumGuests = new JLabel("—");
+        lblSumGuests = new JLabel("1");
         lblSumCheckIn = new JLabel("—");
         lblSumCheckOut = new JLabel("—");
         lblSumDays = new JLabel("—");
+        lblSumRoomSelected = new JLabel("Chưa chọn");
 
-//        add(createLateCheckoutPolicyPanel(), BorderLayout.NORTH);
-        add(createLeftPanel(),BorderLayout.CENTER);
-        add(createSummaryPanel(),BorderLayout.EAST);
+        add(createLeftPanel(), BorderLayout.CENTER);
+        add(createSummaryPanel(), BorderLayout.EAST);
         
-        dcCheckIn.addPropertyChangeListener("date", evt -> {
-            updateSummary();
-            updateCalculation();
-        });
-        dcCheckOut.addPropertyChangeListener("date", evt -> {
-            updateSummary();
-            updateCalculation();
-        });
+        // Tạo Listener chung để dùng cho cả 2 DateChooser
+        java.beans.PropertyChangeListener dateChange = evt -> {
+            if ("date".equals(evt.getPropertyName())) {
+                updateSummary();
+                updateCalculation();
+                triggerLoadRoom(); // Tự động load phòng khi đổi ngày
+            }
+        };
+
+        dcCheckIn.addPropertyChangeListener(dateChange);
+        dcCheckOut.addPropertyChangeListener(dateChange);
         
         updateRoomDetails();
         updateCalculation();
-        
+        triggerLoadRoom(); // Load lần đầu khi mở giao diện
     }
     
 
@@ -115,6 +125,8 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
         updateRoomDetails(); 
         
         pnlLeftBox.add(pnlRoomDetailsContainer);
+        pnlLeftBox.add(Box.createVerticalStrut(25));
+        pnlLeftBox.add(createStepChoiceRoomPanel());
 
         return pnlLeftBox;
     }
@@ -375,7 +387,7 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
             }
         });
         
-        JTextField note = createField();
+//        JTextField note = createField();
 
         cbRoomType = new JComboBox<>(lpDAO.fetchAllRoomTypeNames());
         cbRoomType.addActionListener(this);
@@ -422,18 +434,12 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
         pnlBox.add(txtGuests,gbc);
 
         gbc.gridy++;
-        gbc.gridx=0;
-        pnlBox.add(new JLabel("Số tiền đặt cọc (VND)"),gbc);
-
-        gbc.gridx=1;
-        pnlBox.add(new JLabel("SPECIAL NOTES"),gbc);
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        pnlBox.add(new JLabel("Số tiền đặt cọc (VND)"), gbc);
 
         gbc.gridy++;
-        gbc.gridx=0;
-        pnlBox.add(txtTienCoc,gbc);
-
-        gbc.gridx=1;
-        pnlBox.add(note,gbc);
+        pnlBox.add(txtTienCoc, gbc);
 
         return pnlBox;
     }
@@ -459,10 +465,13 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
         pnlBox.add(createRow("Họ tên khách", lblSumName));
         pnlBox.add(createRow("Số điện thoại", lblSumPhone));
         pnlBox.add(createRow("Loại phòng", lblSumRoomType));
+        pnlBox.add(createRow("Phòng đã chọn", lblSumRoomSelected));
         pnlBox.add(createRow("Số người", lblSumGuests));
         pnlBox.add(createRow("Nhận phòng", lblSumCheckIn));
         pnlBox.add(createRow("Trả phòng", lblSumCheckOut));
         pnlBox.add(createRow("Số ngày", lblSumDays));
+        
+
         
         pnlBox.add(createCalculationPanel());
         pnlBox.add(Box.createVerticalStrut(25));
@@ -546,37 +555,83 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
     	return true;
     }
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		Object source= e.getSource();
-		if(source.equals(btnBooking)) {
-			new ChiTietDatPhongFrame(lblSumName.getText(), lblSumPhone.getText(), txtID.getText(), 
-					lblSumRoomType.getText(), lblSumCheckIn.getText(), lblSumCheckOut.getText(), 
-					Integer.parseInt(lblSumGuests.getText().replace(",", "").replace(" VNĐ", "")), 
-					Double.parseDouble(lblSumDeposit.getText().replace(",", "").replace(" VNĐ", "")), 
-					Double.parseDouble(lblSumTotal.getText().replace(",", "").replace(" VND", ""))).setVisible(true);
-		}else if(source.equals(cbRoomType)) {
-			updateRoomDetails();
-			updateSummary();
-		}else if(source.equals(btnCancel)) {
-			txtFullName.setText("");
-			txtTienCoc.setText("");
-			txtPhone.setText("");
-			txtID.setText("");
-			txtTienCoc.setText("0");
-			lblSumCheckIn.setText("—");
-			lblSumCheckOut.setText("—");
-			lblSumDays.setText("—");
-			lblSumDeposit.setText("0");
-			lblSumGuests.setText("—");
-			lblSumName.setText("—");
-			lblSumPhone.setText("—");
-			lblSumRoomPrice.setText("0");
-			lblSumRoomType.setText("—");
-			lblSumTotal.setText("—");
-		}
-		
-	}
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        Object source = e.getSource();
+        if (source.equals(btnBooking)) {
+            new ChiTietDatPhongFrame(lblSumName.getText(), lblSumPhone.getText(), txtID.getText(), 
+                    lblSumRoomType.getText(), lblSumCheckIn.getText(), lblSumCheckOut.getText(), 
+                    Integer.parseInt(lblSumGuests.getText().replace(",", "").replace(" VNĐ", "")), 
+                    Double.parseDouble(lblSumDeposit.getText().replace(",", "").replace(" VNĐ", "")), 
+                    Double.parseDouble(lblSumTotal.getText().replace(",", "").replace(" VND", ""))).setVisible(true);
+                    
+        } else if (source.equals(cbRoomType)) {
+            updateRoomDetails();
+            updateSummary();
+            updateCalculation();
+            triggerLoadRoom(); // Load lại phòng khi đổi loại phòng
+            
+        } else if (source.equals(btnCancel)) {
+            // RESET TOÀN BỘ FORM
+            txtFullName.setText("");
+            txtPhone.setText("");
+            txtID.setText("");
+            txtTienCoc.setText("0");
+            txtGuests.setText("1");
+            
+            lblSumName.setText("—");
+            lblSumPhone.setText("—");
+            lblSumRoomType.setText("—");
+            lblSumGuests.setText("1");
+            lblSumCheckIn.setText("—");
+            lblSumCheckOut.setText("—");
+            lblSumDays.setText("—");
+            lblSumRoomPrice.setText("0 VND");
+            lblSumDeposit.setText("0 VND");
+            lblSumTotal.setText("0 VND");
+            
+            // Reset ngày về mặc định
+            dcCheckIn.setDate(new java.util.Date());
+            dcCheckOut.setDate(new java.util.Date());
+            
+            // Xóa danh sách phòng trống đang hiển thị
+            if (roomSelection != null) {
+                roomSelection.removeAll();
+                roomSelection.revalidate();
+                roomSelection.repaint();
+            }
+            
+            triggerLoadRoom(); // Tải lại danh sách theo mặc định mới
+        }else if (source.equals(btnOpenRoomSelect)) {
+            if (dcCheckIn.getDate() == null || dcCheckOut.getDate() == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn ngày trước khi chọn phòng!");
+                return;
+            }
+
+            String loaiPhong = cbRoomType.getSelectedItem().toString();
+            
+            // Khởi tạo Dialog
+            ChonPhongFrame diag = new ChonPhongFrame(loaiPhong, dcCheckIn.getDate(), dcCheckOut.getDate());
+            diag.setVisible(true); // Màn hình sẽ dừng tại đây cho đến khi Dialog đóng
+
+            // Lấy kết quả sau khi Dialog đóng
+            String result = diag.getSelectedRoomList();
+            if (!result.isEmpty()) {
+                selectedRooms = result;
+                lblSumRoomSelected.setText(result); // Hiển thị mã phòng lên bảng tóm tắt
+                btnOpenRoomSelect.setText("ĐÃ CHỌN: " + result);
+                btnOpenRoomSelect.setBackground(new Color(220, 255, 220));
+            }
+        }
+    }
+    
+    private void triggerLoadRoom() {
+        // Kiểm tra xem đã có đủ ngày và loại phòng chưa mới gọi DAO
+        if (dcCheckIn != null && dcCheckOut != null && dcCheckIn.getDate() != null && dcCheckOut.getDate() != null) {
+            String loaiPhongSelected = cbRoomType.getSelectedItem().toString();
+            loadPhongEmpty(loaiPhongSelected, dcCheckIn.getDate(), dcCheckOut.getDate());
+        }
+    }
 	
 	/***
 	 * Tính toán tổng tiền phòng dựa trên đơn giá, số ngày ở và trừ đi tiền cọc.
@@ -735,5 +790,79 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
 	        }
 	    }
 	}
-		
+	
+	private JPanel createStepChoiceRoomPanel() {
+	    JPanel step3 = new JPanel(new GridBagLayout());
+	    step3.setBackground(Color.WHITE);
+	    step3.setBorder(new CompoundBorder(
+	            new LineBorder(new Color(220, 220, 220)),
+	            new EmptyBorder(20	, 20, 20, 20)));
+
+	    GridBagConstraints gbc = new GridBagConstraints();
+	    gbc.insets = new Insets(10, 10, 10, 10);
+	    gbc.fill = GridBagConstraints.HORIZONTAL;
+	    gbc.weightx = 1;
+
+	    JLabel lblTitle = new JLabel("Chọn phòng lưu trú");
+	    lblTitle.setFont(new Font("Serif", Font.BOLD, 22));
+	    lblTitle.setForeground(new Color(150, 100, 60));
+
+	    btnOpenRoomSelect = new JButton("BẤM ĐỂ CHỌN PHÒNG TRỐNG");
+	    btnOpenRoomSelect.setFont(new Font("Segoe UI", Font.BOLD, 15));
+	    btnOpenRoomSelect.setBackground(new Color(245, 240, 230));
+	    btnOpenRoomSelect.setForeground(new Color(110, 60, 45));
+	    btnOpenRoomSelect.setCursor(new Cursor(Cursor.HAND_CURSOR));
+	    btnOpenRoomSelect.setPreferredSize(new Dimension(0, 40));
+	    btnOpenRoomSelect.addActionListener(this);
+
+	    gbc.gridx = 0; gbc.gridy = 0;
+	    step3.add(lblTitle, gbc);
+
+	    gbc.gridy++;
+	    step3.add(new JLabel("Hệ thống sẽ lọc các phòng trống theo loại phòng và thời gian đã chọn."), gbc);
+
+	    gbc.gridy++;
+	    step3.add(btnOpenRoomSelect, gbc);
+
+	    return step3;
+	}
+	
+	// Cập nhật lại createRoomCard để trông chuyên nghiệp hơn
+	private JPanel createRoomCard(String roomID, String type) {
+        JPanel card = new JPanel(new GridLayout(2, 1));
+        card.setPreferredSize(new Dimension(120, 80));
+        card.setBorder(BorderFactory.createLineBorder(new Color(76, 175, 80)));
+        card.setBackground(new Color(232, 245, 233));
+
+        JLabel lblID = new JLabel(roomID, SwingConstants.CENTER);
+        lblID.setFont(new Font("Arial", Font.BOLD, 18));
+        
+        JLabel lblType = new JLabel(type, SwingConstants.CENTER);
+        
+        card.add(lblID);
+        card.add(lblType);
+        return card;
+    }
+	
+	public void loadPhongEmpty(String loaiPhong, java.util.Date dIn, java.util.Date dOut) {
+		if (dIn == null || dOut == null || roomSelection == null) {
+	        return; 
+	    }
+
+	    java.sql.Date sqlIn = new java.sql.Date(dIn.getTime());
+	    java.sql.Date sqlOut = new java.sql.Date(dOut.getTime());
+
+	    roomSelection.removeAll(); // Sẽ không còn lỗi ở đây nữa
+
+        // Lấy dữ liệu mới
+        List<Phong> ds = phongDAO .getDanhSachPhongTrong(loaiPhong, sqlIn, sqlOut);
+
+        for (Phong p : ds) {
+            String soPhongHienThi = p.getMaPhong().substring(1);
+            roomSelection.add(createRoomCard(soPhongHienThi, p.getLoaiPhong().getTenLoaiPhong().toString()));
+        }
+
+        roomSelection.revalidate();
+        roomSelection.repaint();
+    }
 }

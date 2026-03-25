@@ -8,11 +8,39 @@ public class DatPhong {
 	private LocalDateTime ngayDat;
 	private LocalDateTime ngayCheckInDuKien;
 	private LocalDateTime ngayCheckOutDuKien;
+	private LocalDateTime ngayCheckIn;
+	private LocalDateTime ngayCheckOut;
 	private double tienDatCoc;
 	private KhachHang khachHang;
 	private NhanVien nhanVien;
 	private ChiTietDatPhong ctDatPhong;
 	
+	
+	
+	public LocalDateTime getNgayCheckIn() {
+		return ngayCheckIn;
+	}
+	public void setNgayCheckIn(LocalDateTime ngayCheckIn) {
+		this.ngayCheckIn = ngayCheckIn;
+	}
+	public DatPhong(String maDatPhong, LocalDateTime ngayDat, LocalDateTime ngayCheckInDuKien,
+			LocalDateTime ngayCheckOutDuKien, LocalDateTime ngayCheckIn, LocalDateTime ngayCheckOut,
+			KhachHang khachHang) {
+		super();
+		this.maDatPhong = maDatPhong;
+		this.ngayDat = ngayDat;
+		this.ngayCheckInDuKien = ngayCheckInDuKien;
+		this.ngayCheckOutDuKien = ngayCheckOutDuKien;
+		this.ngayCheckIn = ngayCheckIn;
+		this.ngayCheckOut = ngayCheckOut;
+		this.khachHang = khachHang;
+	}
+	public LocalDateTime getNgayCheckOut() {
+		return ngayCheckOut;
+	}
+	public void setNgayCheckOut(LocalDateTime ngayCheckOut) {
+		this.ngayCheckOut = ngayCheckOut;
+	}
 	public DatPhong(String maDatPhong, KhachHang khachHang) {
 		super();
 		this.maDatPhong = maDatPhong;
