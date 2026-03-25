@@ -85,20 +85,20 @@ INSERT INTO ChiTietDatPhong (maChiTietDatPhong, maPhong, maDatPhong) VALUES
 ('CTDP05', 'P301', 'DP05');
 
 -- 9. HÓA ĐƠN
-INSERT INTO HoaDon (maHoaDon, ngayTaoHoaDon, maNhanVien) VALUES 
-('HD001', GETDATE(), '20260002'),
-('HD002', GETDATE(), '20260002'),
-('HD003', GETDATE(), '20260001'),
-('HD004', GETDATE(), '20260001'),
-('HD005', GETDATE(), '20260002');
+INSERT INTO HoaDon (maHoaDon,maDatPhong, ngayTaoHoaDon, maNhanVien) VALUES 
+('HD001','DP01', GETDATE(), '20260002'),
+('HD002','DP02', GETDATE(), '20260002'),
+('HD003','DP02', GETDATE(), '20260001'),
+('HD004','DP03', GETDATE(), '20260001'),
+('HD005','DP01', GETDATE(), '20260002');
 
 -- 10. CHI TIẾT HÓA ĐƠN
-INSERT INTO ChiTietHoaDon (maHoaDon, maDatPhong, soGioO, soNgayO) VALUES 
-('HD001', 'DP01', 0, 2),
-('HD002', 'DP02', 0, 2),
-('HD003', 'DP03', 0, 3),
-('HD004', 'DP04', 0, 1),
-('HD005', 'DP05', 0, 2);
+INSERT INTO ChiTietHoaDon (maHoaDon, soGioO, soNgayO) VALUES 
+('HD001', 0, 2),
+('HD002', 0, 2),
+('HD003', 0, 3),
+('HD004', 0, 1),
+('HD005', 0, 2);
 
 -- 11. DỊCH VỤ ĐÃ SỬ DỤNG
 INSERT INTO DichVuDaSuDung (maDichVuSuDung, maDichVu, maDatPhong, ngaySuDung, soLuong, tongTienDichVu) VALUES 
