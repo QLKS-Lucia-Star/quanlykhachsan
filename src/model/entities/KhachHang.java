@@ -1,55 +1,62 @@
 package model.entities;
 
+import java.time.LocalDate;
+
 public class KhachHang {
-	private String maKhachHang;
-	private String hoTen;
-	private String CCCD;
-	private String soDienThoai;
-	
-	
-	public KhachHang(String maKhachHang) {
-		this.maKhachHang = maKhachHang;}
+    private String maKhachHang;
+    private String hoTen;
+    private String CCCD;            // ánh xạ cột soCanCuocCongDan trong DB
+    private String soDienThoai;
+    private LocalDate ngaySinh;
 
-	public KhachHang() {
-}
-	public KhachHang(String maKhachHang, String hoTen, String cCCD, String soDienThoai) {
-		super();
-		this.maKhachHang = maKhachHang;
-		this.hoTen = hoTen;
-		CCCD = cCCD;
-		this.soDienThoai = soDienThoai;
-	}
-	
-	//============GETTER/SETTER==========
-	public String getHoTen() {
-		return hoTen;
-	}
+    // ─── Constructors ────────────────────────────────────────────────────────
+    public KhachHang() {}
 
-	public void setHoTen(String hoTen) {
-		this.hoTen = hoTen;
-	}
+    public KhachHang(String maKhachHang) {
+        this.maKhachHang = maKhachHang;
+    }
 
-	public String getCCCD() {
-		return CCCD;
-	}
+    public KhachHang(String maKhachHang, String hoTen, String CCCD, String soDienThoai) {
+        this.maKhachHang = maKhachHang;
+        this.hoTen       = hoTen;
+        this.CCCD        = CCCD;
+        this.soDienThoai = soDienThoai;
+    }
 
-	public void setCCCD(String cCCD) {
-		CCCD = cCCD;
-	}
+    public KhachHang(String maKhachHang, String hoTen, String CCCD,
+                     String soDienThoai, LocalDate ngaySinh) {
+        this(maKhachHang, hoTen, CCCD, soDienThoai);
+        this.ngaySinh = ngaySinh;
+    }
 
-	public String getSoDienThoai() {
-		return soDienThoai;
-	}
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+    /** Hôm nay có phải sinh nhật không */
+    public boolean isBirthdayToday() {
+        if (ngaySinh == null) return false;
+        LocalDate today = LocalDate.now();
+        return ngaySinh.getDayOfMonth() == today.getDayOfMonth()
+            && ngaySinh.getMonthValue()  == today.getMonthValue();
+    }
 
-	public void setSoDienThoai(String soDienThoai) {
-		this.soDienThoai = soDienThoai;
-	}
+    /** Sinh nhật có trong tháng hiện tại không */
+    public boolean isBirthdayThisMonth() {
+        if (ngaySinh == null) return false;
+        return ngaySinh.getMonthValue() == LocalDate.now().getMonthValue();
+    }
 
-	public String getMaKhachHang() {
-		return maKhachHang;
-	}
-	public void setMaKhachHang(String maKH) {
-		this.maKhachHang = maKH;
-	}
-	
+    // ─── Getters / Setters ───────────────────────────────────────────────────
+    public String getMaKhachHang()             { return maKhachHang; }
+    public void   setMaKhachHang(String v)     { this.maKhachHang = v; }
+
+    public String getHoTen()                   { return hoTen; }
+    public void   setHoTen(String v)           { this.hoTen = v; }
+
+    public String getCCCD()                    { return CCCD; }
+    public void   setCCCD(String v)            { this.CCCD = v; }
+
+    public String getSoDienThoai()             { return soDienThoai; }
+    public void   setSoDienThoai(String v)     { this.soDienThoai = v; }
+
+    public LocalDate getNgaySinh()             { return ngaySinh; }
+    public void       setNgaySinh(LocalDate v) { this.ngaySinh = v; }
 }
