@@ -169,7 +169,6 @@ public class QuanLyPhongPanel extends JPanel {
     }
 
     private JScrollPane createTable() {
-        // --- THÊM CỘT "SỨC CHỨA" VÀO DANH SÁCH ---
         String[] columns = {"Số thứ tự", "Mã phòng", "Loại phòng", "Giá phòng", "Sức chứa", "Trạng thái", "Số tầng"};
         
         dtmPhong = new DefaultTableModel(null, columns) {
@@ -181,11 +180,9 @@ public class QuanLyPhongPanel extends JPanel {
         tblPhong = new JTable(dtmPhong);
         
         rowSorter = new TableRowSorter<>(dtmPhong);
-        
         for (int i = 0; i < columns.length; i++) {
             rowSorter.setSortable(i, false); 
         }
-        
         tblPhong.setRowSorter(rowSorter);
 
         tblPhong.setRowHeight(40);
@@ -199,20 +196,51 @@ public class QuanLyPhongPanel extends JPanel {
         header.setBackground(new Color(90, 55, 45));
         header.setForeground(Color.WHITE);
         header.setPreferredSize(new Dimension(100, 40));
-        
         header.setReorderingAllowed(false);
 
-        DefaultTableCellRenderer dftcr = new DefaultTableCellRenderer();
-        dftcr.setHorizontalAlignment(SwingConstants.CENTER);
-        tblPhong.setDefaultRenderer(Object.class, dftcr);
+        // --- CĂN GIỮA TOÀN BỘ BẢNG ---
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        tblPhong.setDefaultRenderer(Object.class, centerRenderer);
+
+        // --- ĐỔ MÀU CHỮ RIÊNG CHO CỘT TRẠNG THÁI (CỘT 5) ---
+        tblPhong.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, 
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(SwingConstants.CENTER); 
+                
+                if (value != null) {
+                    String status = value.toString();
+                    if (isSelected) {
+                        c.setForeground(Color.WHITE); 
+                    } else {
+                        if (status.equals("Còn trống")) {
+                            c.setForeground(new Color(40, 167, 69)); // Xanh lá
+                            c.setFont(c.getFont().deriveFont(Font.BOLD));
+                        } else if (status.equals("Đã có khách")) {
+                            c.setForeground(new Color(220, 53, 69)); // Đỏ
+                            c.setFont(c.getFont().deriveFont(Font.BOLD));
+                        } else if (status.equals("Đang bảo trì")) {
+                            c.setForeground(Color.GRAY); // Xám
+                            c.setFont(c.getFont().deriveFont(Font.ITALIC | Font.BOLD));
+                        } else {
+                            c.setForeground(Color.BLACK);
+                        }
+                    }
+                }
+                return c;
+            }
+        });
 
         JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem mnuSua = new JMenuItem("✏️ Cập nhật thông tin");
-        JMenuItem mnuXoa = new JMenuItem("🗑️ Xóa phòng này");
+        JMenuItem mnuSua = new JMenuItem("Cập nhật thông tin");
+        JMenuItem mnuXoa = new JMenuItem("Xóa phòng này");
         
         mnuSua.setForeground(new Color(0, 102, 204)); 
         mnuSua.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        
         mnuXoa.setForeground(new Color(220, 53, 69)); 
         mnuXoa.setFont(new Font("Segoe UI", Font.BOLD, 14));
         
@@ -230,10 +258,8 @@ public class QuanLyPhongPanel extends JPanel {
                     } else {
                         tblPhong.clearSelection();
                     }
-
                     int rowIndex = tblPhong.getSelectedRow();
                     if (rowIndex < 0) return; 
-
                     popupMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
@@ -244,11 +270,9 @@ public class QuanLyPhongPanel extends JPanel {
             if (viewRow != -1) {
                 int modelRow = tblPhong.convertRowIndexToModel(viewRow);
                 String maPhong = dtmPhong.getValueAt(modelRow, 1).toString();
-                
                 int confirm = JOptionPane.showConfirmDialog(QuanLyPhongPanel.this,
                         "Bạn có chắc chắn muốn XÓA phòng [" + maPhong + "] không?\nDữ liệu không thể khôi phục!", 
                         "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                
                 if (confirm == JOptionPane.YES_OPTION) {
                     if (phongDAO.delete(maPhong)) {
                         JOptionPane.showMessageDialog(QuanLyPhongPanel.this, "Xóa thành công!");
@@ -266,11 +290,8 @@ public class QuanLyPhongPanel extends JPanel {
                 int modelRow = tblPhong.convertRowIndexToModel(viewRow);
                 String maPhong = dtmPhong.getValueAt(modelRow, 1).toString();
                 String loaiPhong = dtmPhong.getValueAt(modelRow, 2).toString();
-                
-                // --- ĐÃ DỊCH CHUYỂN INDEX DO CÓ THÊM CỘT SỨC CHỨA ---
-                String trangThai = dtmPhong.getValueAt(modelRow, 5).toString(); // Trạng thái bị đẩy sang cột 5
-                int soTang = Integer.parseInt(dtmPhong.getValueAt(modelRow, 6).toString()); // Số tầng bị đẩy sang cột 6
-
+                String trangThai = dtmPhong.getValueAt(modelRow, 5).toString(); 
+                int soTang = Integer.parseInt(dtmPhong.getValueAt(modelRow, 6).toString());
                 new PhongDialog(QuanLyPhongPanel.this, maPhong, loaiPhong, trangThai, soTang).setVisible(true);
             }
         });
@@ -278,23 +299,19 @@ public class QuanLyPhongPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(tblPhong);
         scroll.setBorder(new LineBorder(new Color(230, 230, 230)));
         scroll.getViewport().setBackground(Color.WHITE);
-
         return scroll;
     }
 
     public void initData() {
         dtmPhong.setRowCount(0);
         List<Phong> dsPhong = phongDAO.getAll();
-        
         int countTong = dsPhong.size();
         int countTrong = 0;
         int countCoKhach = 0;
         int countBaoTri = 0;
-
         int stt = 1; 
         for (Phong p : dsPhong) {
             String trangThai = "";
-            
             if (p.getTrangThai() == TrangThaiPhong.CONTRONG) {
                 trangThai = "Còn trống";
                 countTrong++;
@@ -305,30 +322,17 @@ public class QuanLyPhongPanel extends JPanel {
                 trangThai = "Đang bảo trì";
                 countBaoTri++;
             }
-            
             String loaiPhongStr = p.getLoaiPhong().getTenLoaiPhong().toString();
-            
-            // Lấy giá phòng
             model.entities.BangGiaPhong bgp = bangGiaPhongDAO.getPriceByNameRoomType(loaiPhongStr);
             double price = (bgp != null) ? bgp.getDonGia() : 0.0;
             String strPrice = String.format("%,.0f đ", price);
-            
-            // --- GỌI DAO ĐỂ LẤY SỨC CHỨA ---
             int sucChua = phongDAO.getSucChua(loaiPhongStr);
             String strSucChua = (sucChua > 0) ? sucChua + " người" : "Chưa cập nhật";
-            
             Object[] row = {
-                stt++, 
-                p.getMaPhong(), 
-                loaiPhongStr, 
-                strPrice,
-                strSucChua, // <--- THÊM BIẾN SỨC CHỨA VÀO BẢNG
-                trangThai, 
-                p.getSoTang()
+                stt++, p.getMaPhong(), loaiPhongStr, strPrice, strSucChua, trangThai, p.getSoTang()
             };
             dtmPhong.addRow(row);
         }
-        
         lblValTongPhong.setText(String.valueOf(countTong));
         lblValPhongTrong.setText(String.valueOf(countTrong));
         lblValCoKhach.setText(String.valueOf(countCoKhach));

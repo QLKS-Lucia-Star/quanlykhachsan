@@ -32,12 +32,11 @@ public class PhongDialog extends JDialog {
         setTitle("Cập Nhật Thông Tin Phòng");
         
         txtMaPhong.setText(maPhong.trim());
-        txtMaPhong.setEditable(false); 
+        txtMaPhong.setEditable(false); // [cite: 31] Ràng buộc khóa chính không cho sửa mã khi cập nhật
         txtMaPhong.setBackground(new Color(230, 230, 230)); 
         
         txtSoTang.setText(String.valueOf(soTang));
         
-        // Cực kỳ quan trọng: Phải trim() biến loaiPhong trước khi valueOf
         try {
             cbLoaiPhong.setSelectedItem(TenLoaiPhong.valueOf(loaiPhong.trim()));
         } catch (Exception e) {
@@ -89,19 +88,38 @@ public class PhongDialog extends JDialog {
     }
 
     private void savePhong() {
+        String ma = txtMaPhong.getText().trim();
+        String soTangStr = txtSoTang.getText().trim();
+
+        // 1. Kiểm tra rỗng và định dạng Mã phòng (Pxxx) theo nghiệp vụ 
+        if (ma.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập mã phòng!");
+            return;
+        }
+        if (!ma.matches("P\\d{3}")) {
+            JOptionPane.showMessageDialog(this, "Mã phòng phải có dạng Pxxx (Ví dụ: P001, P102...)"); // 
+            return;
+        }
+
+        // 2. Kiểm tra riêng trường hợp số tầng rỗng
+        if (soTangStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập số tầng!");
+            return;
+        }
+
         try {
-            String ma = txtMaPhong.getText().trim();
-            int tang = Integer.parseInt(txtSoTang.getText().trim());
+            // 3. Kiểm tra định dạng số tầng phải là ký số 
+            int tang = Integer.parseInt(soTangStr);
+            if (tang <= 0) {
+                JOptionPane.showMessageDialog(this, "Số tầng phải lớn hơn 0!"); // 
+                return;
+            }
+
             TenLoaiPhong loai = (TenLoaiPhong) cbLoaiPhong.getSelectedItem();
             
             String ttStr = cbTrangThai.getSelectedItem().toString().trim();
             TrangThaiPhong tt = ttStr.equals("Còn trống") ? TrangThaiPhong.CONTRONG :
                                 (ttStr.equals("Đã có khách") ? TrangThaiPhong.DACOKHACH : TrangThaiPhong.BAN);
-            
-            if(ma.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập mã phòng!");
-                return;
-            }
 
             Phong p = new Phong(ma, new LoaiPhong(loai), tt, tang);
             
@@ -123,7 +141,8 @@ public class PhongDialog extends JDialog {
                 }
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Số tầng phải là chữ số!");
+            // Chỉ hiện lỗi này khi đã nhập nhưng nhập sai định dạng ký tự 
+            JOptionPane.showMessageDialog(this, "Số tầng phải là ký tự số!");
         }
     }
 }
