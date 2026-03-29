@@ -8,8 +8,8 @@ import java.util.Objects;
  */
 public class BangGiaDichVu_ChiTiet {
     private String maChiTietBangGia; // maChiTietBangGia (Primary Key)
-    private String maBangGia;        // maBangGia (Foreign Key)
-    private String maDichVu;         // maDichVu (Foreign Key)
+    private BangGiaDichVu maBangGia;        // maBangGia (Foreign Key)
+    private DichVu maDichVu;         // maDichVu (Foreign Key)
     private double giaDichVu;        // giaDichVu
     private String donViTinh;        // donViTinh
     private int soLuong;             // soLuong
@@ -19,7 +19,7 @@ public class BangGiaDichVu_ChiTiet {
     }
 
     // Constructor đầy đủ tham số
-    public BangGiaDichVu_ChiTiet(String maChiTietBangGia, String maBangGia, String maDichVu, 
+    public BangGiaDichVu_ChiTiet(String maChiTietBangGia, BangGiaDichVu maBangGia, DichVu maDichVu, 
                                 double giaDichVu, String donViTinh, int soLuong) {
         this.maChiTietBangGia = maChiTietBangGia;
         this.maBangGia = maBangGia;
@@ -38,19 +38,19 @@ public class BangGiaDichVu_ChiTiet {
         this.maChiTietBangGia = maChiTietBangGia;
     }
 
-    public String getMaBangGia() {
+    public BangGiaDichVu getMaBangGia() {
         return maBangGia;
     }
 
-    public void setMaBangGia(String maBangGia) {
+    public void setMaBangGia(BangGiaDichVu maBangGia) {
         this.maBangGia = maBangGia;
     }
 
-    public String getMaDichVu() {
+    public DichVu getMaDichVu() {
         return maDichVu;
     }
 
-    public void setMaDichVu(String maDichVu) {
+    public void setMaDichVu(DichVu maDichVu) {
         this.maDichVu = maDichVu;
     }
 

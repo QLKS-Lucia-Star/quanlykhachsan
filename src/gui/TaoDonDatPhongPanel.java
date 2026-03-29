@@ -87,24 +87,73 @@ public class TaoDonDatPhongPanel extends JPanel implements ActionListener, Focus
         lblSumDays = new JLabel("—");
         lblSumRoomSelected = new JLabel("Chưa chọn");
 
-        add(createLeftPanel(), BorderLayout.CENTER);
-        add(createSummaryPanel(), BorderLayout.EAST);
+        // Tạo left panel (nội dung cần cuộn)
+        JPanel leftPanel = createLeftPanel();
         
-        // Tạo Listener chung để dùng cho cả 2 DateChooser
+        // Tạo JScrollPane với thanh cuộn mỏng, đẹp
+        JScrollPane leftScrollPane = new JScrollPane(leftPanel);
+        leftScrollPane.setBorder(null);
+        leftScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        leftScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        
+        // Tùy chỉnh thanh cuộn mỏng, không nút lên/xuống
+        JScrollBar verticalBar = leftScrollPane.getVerticalScrollBar();
+        verticalBar.setPreferredSize(new Dimension(6, 0));
+        verticalBar.setBackground(new Color(230, 230, 230));
+        verticalBar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+            @Override
+            protected void configureScrollBarColors() {
+                this.thumbColor = new Color(160, 160, 160);
+                this.trackColor = new Color(245, 245, 245);
+            }
+            @Override
+            protected JButton createDecreaseButton(int orientation) {
+                return createZeroButton();
+            }
+            @Override
+            protected JButton createIncreaseButton(int orientation) {
+                return createZeroButton();
+            }
+            private JButton createZeroButton() {
+                JButton btn = new JButton();
+                btn.setPreferredSize(new Dimension(0, 0));
+                btn.setMinimumSize(new Dimension(0, 0));
+                btn.setMaximumSize(new Dimension(0, 0));
+                return btn;
+            }
+            @Override
+            protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(thumbColor);
+                g2.fillRoundRect(thumbBounds.x, thumbBounds.y, thumbBounds.width, thumbBounds.height, 6, 6);
+                g2.dispose();
+            }
+            @Override
+            protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(trackColor);
+                g2.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
+                g2.dispose();
+            }
+        });
+        
+        // Thêm vào giao diện
+        add(leftScrollPane, BorderLayout.CENTER);
+        add(createSummaryPanel(), BorderLayout.EAST);
         java.beans.PropertyChangeListener dateChange = evt -> {
             if ("date".equals(evt.getPropertyName())) {
                 updateSummary();
                 updateCalculation();
-                triggerLoadRoom(); // Tự động load phòng khi đổi ngày
+                triggerLoadRoom();
             }
         };
-
         dcCheckIn.addPropertyChangeListener(dateChange);
         dcCheckOut.addPropertyChangeListener(dateChange);
         
         updateRoomDetails();
         updateCalculation();
-        triggerLoadRoom(); // Load lần đầu khi mở giao diện
+        triggerLoadRoom();
     }
     
 

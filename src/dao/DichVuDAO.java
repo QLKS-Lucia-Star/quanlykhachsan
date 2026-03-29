@@ -112,4 +112,39 @@ public class DichVuDAO {
             return false;
         }
     }
+    
+    /**
+     * Lấy thông tin dịch vụ theo mã dịch vụ (ID)
+     * Kết nối với BangGiaDichVu_ChiTiet để lấy đơn giá đang có hiệu lực
+     */
+    public DichVu getServiceByID(String ma) {
+        DichVu dv = null;
+        // Sử dụng JOIN tương tự hàm getByType để lấy đơn giá từ bảng giá đang áp dụng (trangThai = 1)
+        String sql = "SELECT dv.maDichVu, dv.tenDichVu, bgct.giaDichVu, dv.loaiDichVu, dv.mieuTa " +
+                     "FROM DichVu dv " +
+                     "LEFT JOIN BangGiaDichVu_ChiTiet bgct ON dv.maDichVu = bgct.maDichVu " +
+                     "LEFT JOIN BangGiaDichVu_ThongTin bgtt ON bgct.maBangGia = bgtt.maBangGia " +
+                     "WHERE dv.maDichVu = ? AND (bgtt.trangThai = 1 OR bgtt.trangThai IS NULL)"; 
+
+        try (Connection con = ConnectDatabase.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            
+            ps.setString(1, ma);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    dv = new DichVu(
+                        rs.getString("maDichVu"),
+                        rs.getString("tenDichVu"),
+                        rs.getDouble("giaDichVu"),
+                        rs.getString("loaiDichVu"),
+                        rs.getString("mieuTa")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi lấy dịch vụ theo mã: " + ma);
+            e.printStackTrace();
+        }
+        return dv;
+    }
 }
